@@ -12,7 +12,7 @@ ciphertexts_hex = [
     "466d06ece998b7a2fb1d464fed2ced7641ddaa3cc31c9941cf110abbf409ed39598005b3399ccfafb61d0315fca0a314be138a9f32503bedac8067f03adbf3575c3b8edc9ba7f537530541ab0f9f3cd04ff50d66f1d559ba520e89a2cb2a83",
     "32510ba9babebbbefd001547a810e67149caee11d945cd7fc81a05e9f85aac650e9052ba6a8cd8257bf14d13e6f0a803b54fde9e77472dbff89d71b57bddef121336cb85ccb8f3315f4b52e301d16e9f52f904"]
 
-def strxor(a, b):     # xor two strings of different lengths
+def strxor(a, b): # xor two strings of different lengths
     if len(a) > len(b):
         return "".join([chr(ord(x) ^ ord(y)) for (x, y) in zip(a[:len(b)], b)])
     else:
@@ -25,23 +25,28 @@ if __name__ == "__main__":
     for ct in ciphertexts_hex:
         ciphertexts_ascii.append(bytearray.fromhex(ct).decode(encoding="Latin1"))
 
-    # Initialize the key
+    # Initialize the key to all zeros
     key = ['\0'] * len(min(ciphertexts_ascii, key=len))
 
+    # XOR all possible pairs of ciphertexts
     for ct1 in ciphertexts_ascii:
         for ct2 in ciphertexts_ascii:
             if ct1 != ct2:
-                ct1xorct2 = strxor(ct1, ct2)
-                for i in range(len(min(ciphertexts_ascii, key=len))):
-                    if ct1xorct2[i].isalpha():
-                        key[i] = strxor(strxor(' ', ct1xorct2[i]), ct1[i])
-                        # if strxor(' ', ct1[i]) == strxor(ct1xorct2[i], strxor(' ', ct2[i])):
-                            # key[i] = strxor(' ', ct1[i])
-                        # elif strxor(' ', ct2[i]) == strxor(ct1xorct2[i], strxor(' ', ct1[i])):
-                            # key[i] = strxor(' ', ct2[i])
-                        # else:
-                            # print("Unexpected state")
+                # m1 XOR key = ct1
+                # m2 XOR key = ct2
+                # ct1 XOR ct2 = m1 XOR key XOR m2 XOR key = m1 XOR m2
+                m1xorm2 = strxor(ct1, ct2)
 
+                # Loop over m1xorm2 character by character
+                # Ascii space (0x20) XOR any lowercase letter is the same letter in uppercase (and vice versa for uppercase letters)
+                for i in range(len(min(ciphertexts_ascii, key=len))):
+                    if m1xorm2[i].isalpha():
+                        # Either m1 or m2 is the letter character and the other is the space
+                        # Just guess that m1 is the letter
+                        # key[i] = m1[i] XOR m2[i] XOR space XOR ct1[i]
+                        key[i] = strxor(strxor(m1xorm2[i], ' '), ct1[i])
+
+    # Use the key guess to decrypt the message
     message = strxor("".join(key), ciphertexts_ascii[-1])
 
     print()
