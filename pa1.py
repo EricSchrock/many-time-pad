@@ -1,4 +1,6 @@
 
+import random
+
 ciphertexts_hex = [
     "315c4eeaa8b5f8aaf9174145bf43e1784b8fa00dc71d885a804e5ee9fa40b16349c146fb778cdf2d3aff021dfff5b403b510d0d0455468aeb98622b137dae857553ccd8883a7bc37520e06e515d22c954eba5025b8cc57ee59418ce7dc6bc41556bdb36bbca3e8774301fbcaa3b83b220809560987815f65286764703de0f3d524400a19b159610b11ef3e",
     "234c02ecbbfbafa3ed18510abd11fa724fcda2018a1a8342cf064bbde548b12b07df44ba7191d9606ef4081ffde5ad46a5069d9f7f543bedb9c861bf29c7e205132eda9382b0bc2c5c4b45f919cf3a9f1cb74151f6d551f4480c82b2cb24cc5b028aa76eb7b4ab24171ab3cdadb8356f",
@@ -18,19 +20,13 @@ def strxor(a, b): # xor two strings of different lengths
     else:
         return "".join([chr(ord(x) ^ ord(y)) for (x, y) in zip(a, b[:len(a)])])
 
-if __name__ == "__main__":
-    # Convert ciphertexts from hex encoding to ascii
-    ciphertexts_ascii = [];
-
-    for ct in ciphertexts_hex:
-        ciphertexts_ascii.append(bytearray.fromhex(ct).decode(encoding="Latin1"))
-
+def guess_key(ciphertexts):
     # Initialize the key to all zeros
-    key = ['\0'] * len(min(ciphertexts_ascii, key=len))
+    key = ['\0'] * len(min(ciphertexts, key=len))
 
     # XOR all possible pairs of ciphertexts
-    for ct1 in ciphertexts_ascii:
-        for ct2 in ciphertexts_ascii:
+    for ct1 in ciphertexts:
+        for ct2 in ciphertexts:
             if ct1 != ct2:
                 # m1 XOR key = ct1
                 # m2 XOR key = ct2
@@ -39,23 +35,55 @@ if __name__ == "__main__":
 
                 # Loop over m1xorm2 character by character
                 # Ascii space (0x20) XOR any lowercase letter is the same letter in uppercase (and vice versa for uppercase letters)
-                for i in range(len(min(ciphertexts_ascii, key=len))):
+                for i in range(len(min(ciphertexts, key=len))):
                     if m1xorm2[i].isalpha():
                         # Either m1 or m2 is the letter character and the other is the space
                         # Just guess that m1 is the letter
                         # key[i] = m1[i] XOR m2[i] XOR space XOR ct1[i]
                         key[i] = strxor(strxor(m1xorm2[i], ' '), ct1[i])
 
-    # Use the key guess to decrypt the message
-    message = strxor("".join(key), ciphertexts_ascii[-1])
+    return "".join(key)
+
+def combine_message_guesses(message_guesses):
+    message = []
+
+    for i in range(len(min(message_guesses, key=len))):
+        # Put the i'th character from every message guess in a list
+        character_column = []
+
+        for j in range(len(message_guesses)):
+            character_column.append(message_guesses[j][i])
+
+        # Find the most common i'th character
+        most_common = ' '
+        max_count = 1 # consider increasing this value if spaces are not properly decoded
+
+        for character in character_column:
+            count = character_column.count(character)
+
+            if max_count < count:
+                max_count = count
+                most_common = character
+
+        message.append(most_common)
+
+    return "".join(message)
+
+if __name__ == "__main__":
+    # Convert ciphertexts from hex encoding to ascii
+    ciphertexts_ascii = [];
+
+    for ct in ciphertexts_hex:
+        ciphertexts_ascii.append(bytearray.fromhex(ct).decode(encoding="Latin1"))
+
+    # Generate message guesses
+    message_guesses = []
+    for _ in range(1000): # adjust the number of loops to optimize runtime and accuracy
+        key = guess_key(random.sample(ciphertexts_ascii, random.randint(2, len(ciphertexts_ascii))))
+        message_guesses.append(strxor(key, ciphertexts_ascii[-1]))
+
+    message = combine_message_guesses(message_guesses)
 
     print()
-    print("----- Cipher Text -----")
-    print("".join(hex(ord(x))[2:] for x in "".join(ciphertexts_ascii[-1])))
-    print()
-    print("----- Key -----")
-    print("".join(hex(ord(x))[2:] for x in "".join(key)))
-    print()
     print("----- Message -----")
-    print("".join(hex(ord(x))[2:] for x in message))
     print(message)
