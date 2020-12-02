@@ -25,8 +25,8 @@ If we have enough unique ciphertexts to combine, we can extract the entire key
 
 Algorithm
 -----
+![Alt Text](mtp.png?raw=true)
 
-
-Alternative Solution
+Alternate Solution
 -----
-See [this](https://github.com/mithi/simple-cryptography/tree/master/01-many-time-pad#core-idea) alternative solution that uses three ciphertexts to triangluate which message is a space, rather than guessing.
+See [this](https://github.com/mithi/simple-cryptography/tree/master/01-many-time-pad#core-idea) alternate solution that uses three ciphertexts to triangluate which message is a space, rather than guessing.
