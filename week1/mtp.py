@@ -71,7 +71,7 @@ def combine_message_guesses(message_guesses):
 
 if __name__ == "__main__":
     # Convert ciphertexts from hex encoding to ascii
-    ciphertexts_ascii = [];
+    ciphertexts_ascii = []
 
     for ct in ciphertexts_hex:
         ciphertexts_ascii.append(bytearray.fromhex(ct).decode(encoding="Latin1"))
@@ -84,6 +84,4 @@ if __name__ == "__main__":
 
     message = combine_message_guesses(message_guesses)
 
-    print()
-    print("----- Message -----")
     print(message)
